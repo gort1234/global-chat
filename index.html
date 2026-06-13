@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>global chat</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d0d0f;
+    --surface:  #16161a;
+    --card:     #1e1e24;
+    --border:   #2a2a33;
+    --accent:   #6c8fff;
+    --accent2:  #a78bfa;
+    --text:     #e8e8f0;
+    --muted:    #6b6b80;
+    --online:   #34d399;
+    --danger:   #f87171;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .online-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .online-dot {
+    width: 7px;
+    height: 7px;
+    background: var(--online);
+    border-radius: 50%;
+  }
+
+  .user-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .user-chip:hover { background: var(--border); }
+
+  /* ── Layout ── */
+  .chat-wrapper {
+    width: 100%;
+    max-width: 760px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px 16px;
+  }
+
+  /* ── Messages ── */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+    max-height: calc(100vh - 160px);
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .message {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+    animation: slideIn 0.15s ease-out;
+  }
+
+  .message:hover { border-color: var(--border); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.own {
+    background: #1a1f3a;
+    border-color: #2a3060;
+  }
+
+  .message-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .username {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .message.own .username { color: var(--accent2); }
+
+  .time {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .message-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  /* system messages */
+  .msg-system {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 6px 0;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* date separator */
+  .date-sep {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 8px 0;
+  }
+
+  .date-sep::before, .date-sep::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Input bar ── */
+  .input-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--border);
+  }
+
+  #messageInput {
+    flex: 1;
+    padding: 11px 16px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: none;
+    height: 44px;
+  }
+
+  #messageInput::placeholder { color: var(--muted); }
+  #messageInput:focus { border-color: var(--accent); }
+
+  #sendBtn {
+    width: 44px;
+    height: 44px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+
+  #sendBtn:hover  { background: #8aabff; }
+  #sendBtn:active { transform: scale(0.95); }
+
+  #sendBtn svg { width: 18px; height: 18px; fill: white; }
+
+  /* cooldown indicator */
+  .cooldown-bar {
+    height: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform linear;
+    margin-top: 4px;
+  }
+
+  .cooldown-bar.active {
+    transform: scaleX(1);
+  }
+
+  /* ── Modal (username prompt) ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open {
+    display: flex;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 28px;
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .modal h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .modal p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .modal input {
+    width: 100%;
+    padding: 11px 14px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+  }
+
+  .modal input:focus { border-color: var(--accent); }
+
+  .modal-error {
+    font-size: 12px;
+    color: var(--danger);
+    min-height: 16px;
+  }
+
+  .modal button {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .modal button:hover { background: #8aabff; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 50;
+    white-space: nowrap;
+  }
+
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Scrollback notice ── */
+  #scrollBtn {
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(108,143,255,0.3);
+  }
+
+  #scrollBtn.visible { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- Username modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>choose a username</h2>
+    <p>Pick something memorable. You can change it later by clicking your name in the header.</p>
+    <input id="usernameInput" placeholder="your username" maxlength="20" autocomplete="off">
+    <div class="modal-error" id="modalError"></div>
+    <button id="joinBtn">join chat</button>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    global chat
+  </div>
+  <div class="header-right">
+    <div class="online-badge">
+      <span class="online-dot"></span>
+      <span id="onlineCount">—</span> online
+    </div>
+    <div class="user-chip" id="userChip" title="click to change username"></div>
+  </div>
+</header>
+
+<!-- Chat -->
+<div class="chat-wrapper">
+  <div id="messages"></div>
+  <div class="cooldown-bar" id="cooldownBar"></div>
+  <div class="input-bar">
+    <input id="messageInput" placeholder="say something..." maxlength="300" autocomplete="off">
+    <button id="sendBtn" title="send">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- Scroll-to-bottom button -->
+<button id="scrollBtn">↓ new messages</button>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, push, onChildAdded, onValue, set, remove, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ── Firebase config ── */
+const firebaseConfig = {
+  apiKey: "AIzaSyBVrSql-HcxZnT7M1cbVnEFSY2mCrpZnVw",
+  authDomain: "global-chat-6de59.firebaseapp.com",
+  databaseURL: "https://global-chat-6de59-default-rtdb.firebaseio.com",
+  projectId: "global-chat-6de59",
+  storageBucket: "global-chat-6de59.firebasestorage.app",
+  messagingSenderId: "188693417086",
+  appId: "1:188693417086:web:704aa6d4403efd562ddc2f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const messagesRef = ref(db, "messages");
+const presenceRef = ref(db, "presence");
+
+/* ── Constants ── */
+const COOLDOWN_MS = 3000;
+const RESERVED = ["admin", "owner", "moderator", "mod", "system"];
+const BANNED_WORDS = [
+  // F-word variants
+  "fuck","fuck","fuk","fvck","f uck","f*ck","phuck","fucks","fucking","fucked","fucker","fuckface","fuckhead","motherfuck","motherfucker","motherfucking","clusterfuck","mindfuck",
+  // S-word
+  "shit","sh1t","sht","shyt","shite","bullshit","horseshit","dipshit","shithead","shitstain","shithole","shitfaced","shitty",
+  // A-words
+  "ass","a55","arse","asshole","arsehole","asswipe","asshat","jackass","dumbass","smartass","badass","fatass","lardass","tightass","assface","assfuck","asscunt",
+  // B-words
+  "bitch","b1tch","biatch","bytch","btch","bitches","bitching","bitchy","son of a bitch","sonofabitch",
+  // C-words
+  "cunt","c unt","cvnt","cunts","cunting","cuntface",
+  "cock","c0ck","cocks","cocksucker","cock sucker","cocksucking","cockhead","dickhead",
+  // D-words
+  "dick","d1ck","dik","dicks","dickwad","dickweed","dickface","dipstick",
+  // P-words
+  "pussy","puss","pussies","prick","pr1ck","pricks",
+  // N-slurs
+  "nigger","n1gger","nigg3r","niggers","nigga","n1gga","niggaz","negro","negr0",
+  // R-slur
+  "retard","retarded","retards","tard",
+  // Other slurs
+  "faggot","fag","f4g","fagg0t","faggots","fags","dyke","d1ke","tranny","tr4nny","chink","ch1nk","gook","g00k","spic","sp1c","wetback","kike","k1ke","raghead","towelhead","zipperhead","coon","c00n","darkie","jigaboo","porch monkey","sambo","spook","Uncle Tom","cracker","honky","redneck","white trash","trailer trash","hillbilly","beaner","greaseball","wop","dago","guinea","kraut","nazi","n4zi","gypsy","gypo",
+  // Sexual terms
+  "blowjob","blow job","handjob","hand job","rimjob","rim job","cumshot","cum shot","cumslut","cum slut","cumguzzler","slut","sl*t","slutty","whore","wh0re","skank","floozy","harlot","trollop","bastard","bast4rd","wanker","w4nker","tit","tits","t1ts","boob","boobs","b00bs","boobies","hooters","nipple","nips","dildo","vibrator","masturbate","masturbation","jerkoff","jerk off","jackoff","jack off","fingerbang","fisting","anal","a2m","atm","gangbang","gang bang","orgy","threesome","foursome","bondage","bdsm","s&m","sadism","masochism","fetish","pornography","porn","p0rn","xxx","hentai","tentacle porn","rape","r4pe","rapist","molest","molestation","pedophile","pedo","p3do","groomer",
+  // Violence / threats
+  "kill yourself","kys","go die","die in a fire","i will kill","i'll kill","i'm going to kill","gonna kill","shoot yourself","hang yourself","slit your wrists","end your life","commit suicide","neck yourself",
+  // Drug references (abusive context)
+  "meth","heroin","crack cocaine","crackhead","crack head","junkie","j*nkie",
+  // Misc insults
+  "idiot","moron","imbecile","stupid","dumbass","dumb shit","loser","worthless","subhuman","vermin","scum","scumbag","lowlife","degenerate","incel","manwhore","simp"
+];
+
+/* ── State ── */
+let username = "";
+let lastMessageTime = 0;
+let sessionId = Math.random().toString(36).slice(2);
+let autoScroll = true;
+let lastDate = "";
+let initialized = false;
+
+/* ── Utils ── */
+function escapeHtml(text) {
+  const d = document.createElement("div");
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+function formatTime(ts) {
+  const d = new Date(ts || Date.now());
+  return d.getHours().toString().padStart(2,"0") + ":" +
+         d.getMinutes().toString().padStart(2,"0");
+}
+
+function formatDate(ts) {
+  const d = new Date(ts || Date.now());
+  const today = new Date();
+  const yesterday = new Date(today); yesterday.setDate(today.getDate()-1);
+  if (d.toDateString() === today.toDateString()) return "today";
+  if (d.toDateString() === yesterday.toDateString()) return "yesterday";
+  return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+/* ── Presence ── */
+function registerPresence() {
+  const myRef = ref(db, `presence/${sessionId}`);
+  set(myRef, { username, ts: Date.now() });
+  window.addEventListener("beforeunload", () => remove(myRef));
+
+  // Keep-alive every 30s
+  setInterval(() => set(myRef, { username, ts: Date.now() }), 30000);
+}
+
+onValue(presenceRef, (snap) => {
+  const data = snap.val() || {};
+  // Prune stale (>90s)
+  const now = Date.now();
+  const active = Object.values(data).filter(v => now - (v.ts||0) < 90000);
+  document.getElementById("onlineCount").textContent = active.length;
+});
+
+/* ── Messages ── */
+const messagesDiv = document.getElementById("messages");
+
+function addMessage(data) {
+  const dateStr = formatDate(data.time);
+  if (dateStr !== lastDate) {
+    const sep = document.createElement("div");
+    sep.className = "date-sep";
+    sep.textContent = dateStr;
+    messagesDiv.appendChild(sep);
+    lastDate = dateStr;
+  }
+
+  const div = document.createElement("div");
+  div.className = "message" + (data.username === username ? " own" : "");
+
+  div.innerHTML = `
+    <div class="message-header">
+      <span class="username">${escapeHtml(data.username || "anonymous")}</span>
+      <span class="time">${formatTime(data.time)}</span>
+    </div>
+    <div class="message-text">${escapeHtml(data.text || "")}</div>
+  `;
+
+  messagesDiv.appendChild(div);
+
+  if (autoScroll) {
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  } else if (initialized) {
+    document.getElementById("scrollBtn").classList.add("visible");
+  }
+}
+
+onChildAdded(messagesRef, (snap) => {
+  addMessage(snap.val());
+  if (!initialized) initialized = true;
+});
+
+/* ── Scroll tracking ── */
+messagesDiv.addEventListener("scroll", () => {
+  const threshold = 80;
+  const atBottom = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < threshold;
+  autoScroll = atBottom;
+  if (atBottom) {
+    document.getElementById("scrollBtn").classList.remove("visible");
+  }
+});
+
+document.getElementById("scrollBtn").addEventListener("click", () => {
+  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  autoScroll = true;
+  document.getElementById("scrollBtn").classList.remove("visible");
+});
+
+/* ── Send ── */
+function sendMessage() {
+  const input = document.getElementById("messageInput");
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Normalize: lowercase, remove spaces between single chars, replace common leet substitutions
+  const normalize = str => str
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[@4]/g, "a")
+    .replace(/[3]/g, "e")
+    .replace(/[1!|]/g, "i")
+    .replace(/[0]/g, "o")
+    .replace(/[5$]/g, "s")
+    .replace(/[7]/g, "t")
+    .replace(/[vv]/g, "w")
+    .replace(/[ck]/g, "c")
+    .replace(/\*/g, "");
+
+  const normalized = normalize(text);
+  const stripped = normalized.replace(/[\s\-_.]/g, ""); // also check with all separators removed
+
+  if (BANNED_WORDS.some(w => {
+    const nw = normalize(w);
+    return normalized.includes(nw) || stripped.includes(nw.replace(/\s/g,""));
+  })) {
+    showToast("message blocked");
+    return;
+  }
+
+  const now = Date.now();
+  const remaining = COOLDOWN_MS - (now - lastMessageTime);
+  if (remaining > 0) {
+    showToast(`wait ${Math.ceil(remaining/1000)}s`);
+    return;
+  }
+
+  lastMessageTime = now;
+
+  // Cooldown visual
+  const bar = document.getElementById("cooldownBar");
+  bar.style.transition = "none";
+  bar.style.transform = "scaleX(0)";
+  bar.classList.add("active");
+  requestAnimationFrame(() => {
+    bar.style.transition = `transform ${COOLDOWN_MS}ms linear`;
+    bar.style.transform = "scaleX(1)";
+  });
+  setTimeout(() => bar.classList.remove("active"), COOLDOWN_MS);
+
+  push(messagesRef, { username, text, time: Date.now() });
+  input.value = "";
+}
+
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+document.getElementById("messageInput").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+/* ── Username modal ── */
+const overlay = document.getElementById("modalOverlay");
+
+function validateUsername(name) {
+  name = name.trim().slice(0, 20);
+  if (!name) return { error: "username can't be empty" };
+  if (name.length < 2) return { error: "at least 2 characters" };
+  if (RESERVED.includes(name.toLowerCase())) return { error: "that name is reserved" };
+  return { name };
+}
+
+function showModal() {
+  overlay.classList.add("open");
+  setTimeout(() => document.getElementById("usernameInput").focus(), 50);
+}
+
+function hideModal() {
+  overlay.classList.remove("open");
+}
+
+function applyUsername(name) {
+  username = name;
+  localStorage.setItem("username", username);
+  document.getElementById("userChip").textContent = username;
+  hideModal();
+  document.getElementById("messageInput").focus();
+  registerPresence();
+}
+
+document.getElementById("joinBtn").addEventListener("click", () => {
+  const raw = document.getElementById("usernameInput").value;
+  const result = validateUsername(raw);
+  if (result.error) {
+    document.getElementById("modalError").textContent = result.error;
+    return;
+  }
+  applyUsername(result.name);
+});
+
+document.getElementById("usernameInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("joinBtn").click();
+});
+
+// Change username by clicking chip
+document.getElementById("userChip").addEventListener("click", () => {
+  document.getElementById("usernameInput").value = username;
+  document.getElementById("modalError").textContent = "";
+  showModal();
+});
+
+// Init: check stored username
+const stored = localStorage.getItem("username");
+if (stored) {
+  const result = validateUsername(stored);
+  if (!result.error) {
+    applyUsername(result.name);
+  } else {
+    showModal();
+  }
+} else {
+  showModal();
+}
+</script>
+</body>
+</html>
