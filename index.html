@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>global chat</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0d0d0f;
+    --surface: #16161a;
+    --card:    #1e1e24;
+    --border:  #2a2a33;
+    --accent:  #6c8fff;
+    --accent2: #a78bfa;
+    --text:    #e8e8f0;
+    --muted:   #6b6b80;
+    --online:  #34d399;
+    --danger:  #f87171;
+    --system:  #facc15;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.5; transform:scale(0.8); }
+  }
+
+  .header-right { display:flex; align-items:center; gap:14px; }
+
+  .admin-badge {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--danger);
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 4px;
+    padding: 3px 8px;
+    display: none;
+  }
+  .admin-badge.visible { display: block; }
+
+  .online-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .online-dot { width:7px; height:7px; background:var(--online); border-radius:50%; }
+
+  .user-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: background 0.15s;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-chip:hover { background: var(--border); }
+
+  /* ── Layout ── */
+  .chat-wrapper {
+    width: 100%; max-width: 760px;
+    flex: 1; display: flex; flex-direction: column;
+    padding: 0 16px 16px;
+  }
+
+  /* ── Messages ── */
+  #messages {
+    flex: 1; overflow-y: auto;
+    padding: 16px 0;
+    display: flex; flex-direction: column; gap: 4px;
+    min-height: 0;
+    max-height: calc(100vh - 180px);
+  }
+
+  #messages::-webkit-scrollbar { width: 4px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .message {
+    position: relative;
+    display: flex; flex-direction: column;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid transparent;
+    transition: border-color 0.15s, background 0.4s;
+    animation: slideIn 0.15s ease-out;
+  }
+  .message:hover { border-color: var(--border); }
+
+  @keyframes slideIn {
+    from { opacity:0; transform:translateY(6px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  .message.own { background:#1a1f3a; border-color:#2a3060; }
+
+  .message.highlight {
+    background: rgba(108,143,255,0.15) !important;
+    border-color: var(--accent) !important;
+  }
+
+  .message-header {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .username {
+    font-size: 13px; font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: default;
+  }
+
+  .time {
+    font-size: 11px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .message-text {
+    font-size: 14px; line-height: 1.5;
+    color: var(--text); word-break: break-word;
+  }
+
+  .message-text a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .message-text a:hover { color: #8aabff; }
+
+  /* reply quote */
+  .reply-quote {
+    background: rgba(255,255,255,0.04);
+    border-left: 3px solid var(--muted);
+    border-radius: 4px;
+    padding: 5px 10px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.15s;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .reply-quote:hover { border-color: var(--accent); color: var(--text); }
+  .reply-quote .reply-author { font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+  /* reply input preview */
+  #replyBar {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  #replyBar.visible { display: flex; }
+  #replyBar .reply-preview { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #replyBar .reply-preview strong { color: var(--accent); }
+  #cancelReply {
+    background: none; border: none;
+    color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1;
+    padding: 0 2px;
+  }
+  #cancelReply:hover { color: var(--danger); }
+
+  /* reply button on hover */
+  .reply-btn {
+    position: absolute; right: 10px; top: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .message:hover .reply-btn { opacity: 1; }
+  .reply-btn:hover { color: var(--text); background: var(--border); }
+
+  /* admin delete btn */
+  .delete-btn {
+    position: absolute; right: 10px; bottom: 10px;
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.3);
+    border-radius: 6px;
+    color: var(--danger);
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+    display: none;
+  }
+  body.admin-mode .delete-btn { display: block; }
+  .delete-btn:hover { background: rgba(248,113,113,0.25); }
+
+  /* system messages */
+  .msg-system {
+    text-align: center;
+    color: var(--system);
+    font-size: 11px;
+    padding: 4px 0;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.7;
+  }
+
+  /* date separator */
+  .date-sep {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted); font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 8px 0;
+  }
+  .date-sep::before, .date-sep::after {
+    content:''; flex:1; height:1px; background:var(--border);
+  }
+
+  /* typing indicator */
+  #typingIndicator {
+    height: 18px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    padding: 0 2px;
+    margin-bottom: 2px;
+  }
+
+  /* ── Input bar ── */
+  .input-bar {
+    display: flex; gap: 8px; align-items: center;
+    padding: 8px 0 0;
+    border-top: 1px solid var(--border);
+  }
+
+  #charCount {
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    min-width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  #charCount.warn { color: var(--danger); }
+
+  #messageInput {
+    flex: 1;
+    padding: 11px 16px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+    height: 44px;
+  }
+  #messageInput::placeholder { color: var(--muted); }
+  #messageInput:focus { border-color: var(--accent); }
+
+  #sendBtn {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    border: none; border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  #sendBtn:hover  { background: #8aabff; }
+  #sendBtn:active { transform: scale(0.95); }
+  #sendBtn svg { width:18px; height:18px; fill:white; }
+
+  .cooldown-bar {
+    height: 2px; background: var(--accent); border-radius: 1px;
+    transform-origin: left; transform: scaleX(0); transition: transform linear;
+    margin-top: 2px;
+  }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 28px;
+    width: 340px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .modal h2 { font-size: 18px; font-weight: 600; }
+  .modal p  { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  .modal input {
+    width: 100%; padding: 11px 14px;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: 'Inter', sans-serif; outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+
+  .modal-hint { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+  .modal-error { font-size: 12px; color: var(--danger); min-height: 16px; }
+
+  .modal button {
+    width: 100%; padding: 11px;
+    background: var(--accent); color: white;
+    border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .modal button:hover { background: #8aabff; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 18px;
+    font-size: 13px; color: var(--text);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 50; white-space: nowrap;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ── Scroll button ── */
+  #scrollBtn {
+    position: fixed; bottom: 80px; right: 24px;
+    background: var(--accent); color: white;
+    border: none; border-radius: 20px;
+    padding: 7px 14px; font-size: 12px;
+    cursor: pointer; display: none; align-items: center; gap: 6px;
+    z-index: 20; box-shadow: 0 4px 12px rgba(108,143,255,0.3);
+  }
+  #scrollBtn.visible { display: flex; }
+</style>
+</head>
+<body>
+
+<!-- Username modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>choose a username</h2>
+    <p>Pick something memorable. You can change it anytime by clicking your name in the header.</p>
+    <input id="usernameInput" placeholder="your username" maxlength="20" autocomplete="off">
+    <div class="modal-hint">2–20 characters</div>
+    <div class="modal-error" id="modalError"></div>
+    <button id="joinBtn">join chat</button>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    global chat
+  </div>
+  <div class="header-right">
+    <span class="admin-badge" id="adminBadge">admin mode</span>
+    <div class="online-badge">
+      <span class="online-dot"></span>
+      <span id="onlineCount">—</span> online
+    </div>
+    <div class="user-chip" id="userChip" title="click to change username"></div>
+  </div>
+</header>
+
+<!-- Chat -->
+<div class="chat-wrapper">
+  <div id="messages"></div>
+  <div id="typingIndicator"></div>
+  <div id="replyBar">
+    <div class="reply-preview" id="replyPreview"></div>
+    <button id="cancelReply" title="cancel reply">✕</button>
+  </div>
+  <div class="cooldown-bar" id="cooldownBar"></div>
+  <div class="input-bar">
+    <input id="messageInput" placeholder="say something..." maxlength="300" autocomplete="off">
+    <span id="charCount">300</span>
+    <button id="sendBtn" title="send">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<button id="scrollBtn">↓ new messages</button>
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getDatabase, ref, push, remove, onChildAdded, onChildRemoved,
+  onValue, set, query, limitToLast, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ── Firebase ── */
+const firebaseConfig = {
+  apiKey: "AIzaSyBVrSql-HcxZnT7M1cbVnEFSY2mCrpZnVw",
+  authDomain: "global-chat-6de59.firebaseapp.com",
+  databaseURL: "https://global-chat-6de59-default-rtdb.firebaseio.com",
+  projectId: "global-chat-6de59",
+  storageBucket: "global-chat-6de59.firebasestorage.app",
+  messagingSenderId: "188693417086",
+  appId: "1:188693417086:web:704aa6d4403efd562ddc2f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const messagesRef = query(ref(db, "messages"), limitToLast(100));
+const presenceRef = ref(db, "presence");
+const typingRef   = ref(db, "typing");
+
+/* ── Constants ── */
+const COOLDOWN_MS   = 3000;
+const MAX_MSG_LEN   = 300;
+const MAX_USER_LEN  = 20;
+const ADMIN_PASS    = "globalchatadministration";
+const RESERVED      = ["admin","owner","moderator","mod","system","globalchat"];
+
+const BANNED_WORDS = [
+  "fuck","fuk","fvck","phuck","fucks","fucking","fucked","fucker","fuckface","fuckhead",
+  "motherfucker","motherfucking","clusterfuck","mindfuck",
+  "shit","shyt","shite","bullshit","horseshit","dipshit","shithead","shitstain","shithole","shitfaced",
+  "ass","arse","asshole","arsehole","asswipe","asshat","jackass","dumbass","fatass","lardass","assface",
+  "bitch","biatch","bytch","bitches","bitching","sonofabitch",
+  "cunt","cvnt","cunts","cunting","cuntface",
+  "cock","cocks","cocksucker","cocksucking","cockhead","dickhead",
+  "dick","dik","dicks","dickwad","dickweed","dickface",
+  "pussy","pussies","prick","pricks",
+  "nigger","nigg3r","niggers","nigga","niggaz","negro",
+  "retard","retarded","retards",
+  "faggot","fagg0t","faggots","dyke","tranny","chink","gook","spic","wetback","kike",
+  "raghead","towelhead","zipperhead","coon","darkie","jigaboo","sambo","spook",
+  "cracker","honky","beaner","greaseball","wop","dago","guinea","kraut","nazi","gypsy","gypo",
+  "blowjob","handjob","rimjob","cumshot","cumslut","cumguzzler","slut","slutty","whore","skank",
+  "floozy","harlot","bastard","wanker","tits","boobs","boobies","hooters","dildo","vibrator",
+  "masturbate","masturbation","jerkoff","jackoff","fingerbang","fisting",
+  "gangbang","orgy","bondage","bdsm","sadism","fetish","pornography","porn","hentai",
+  "rape","rapist","molest","molestation","pedophile","pedo","groomer",
+  "kill yourself","kys","go die","shoot yourself","hang yourself","slit your wrists",
+  "end your life","commit suicide","neck yourself",
+  "meth","heroin","crackhead","junkie",
+  "subhuman","vermin","scumbag","lowlife","degenerate","incel","niga","puh","niger"
+];
+
+/* ── Username colour palette (dark-mode readable) ── */
+const USER_COLORS = [
+  "#6c8fff","#a78bfa","#34d399","#fb923c","#f472b6",
+  "#38bdf8","#facc15","#4ade80","#f87171","#818cf8",
+  "#2dd4bf","#e879f9","#fbbf24","#60a5fa","#a3e635"
+];
+
+function usernameColor(name) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return USER_COLORS[Math.abs(hash) % USER_COLORS.length];
+}
+
+/* ── Profanity filter ── */
+function normalize(str) {
+  return str.toLowerCase()
+    .replace(/[@4]/g,"a").replace(/3/g,"e").replace(/[1!|]/g,"i")
+    .replace(/0/g,"o").replace(/[5$]/g,"s").replace(/7/g,"t")
+    .replace(/\*/g,"").replace(/\s+/g," ").trim();
+}
+
+function containsBannedWord(text) {
+  const n = normalize(text);
+  const s = n.replace(/[\s\-_.]/g,"");
+  return BANNED_WORDS.some(w => {
+    const nw = normalize(w);
+    return n.includes(nw) || s.includes(nw.replace(/\s/g,""));
+  });
+}
+
+/* ── State ── */
+let username      = "";
+let prevUsername  = "";
+let lastMsgTime   = 0;
+let lastMsgText   = "";
+let sessionId     = Math.random().toString(36).slice(2);
+let autoScroll    = true;
+let lastDate      = "";
+let initialized   = false;
+let adminMode     = false;
+let replyTo       = null;   // { id, username, text }
+let typingTimer   = null;
+let isTyping      = false;
+const msgNodes    = {};     // firebaseKey -> DOM node
+
+/* ── Utils ── */
+function escapeHtml(t) {
+  const d = document.createElement("div");
+  d.textContent = t; return d.innerHTML;
+}
+
+function linkify(text) {
+  const escaped = escapeHtml(text);
+  return escaped.replace(
+    /(https?:\/\/[^\s<>"']+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+}
+
+function formatTime(ts) {
+  const d = new Date(ts || Date.now());
+  return d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0");
+}
+
+function formatDate(ts) {
+  const d = new Date(ts || Date.now());
+  const today = new Date(), yest = new Date(today);
+  yest.setDate(today.getDate()-1);
+  if (d.toDateString()===today.toDateString()) return "today";
+  if (d.toDateString()===yest.toDateString())  return "yesterday";
+  return d.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2500);
+}
+
+function scrollToBottom() {
+  const m = document.getElementById("messages");
+  m.scrollTop = m.scrollHeight;
+}
+
+/* ── Presence ── */
+function registerPresence() {
+  const myRef = ref(db, `presence/${sessionId}`);
+  set(myRef, { username, ts: Date.now() });
+  window.addEventListener("beforeunload", () => {
+    remove(myRef);
+    remove(ref(db, `typing/${sessionId}`));
+  });
+  setInterval(() => set(myRef, { username, ts: Date.now() }), 30000);
+}
+
+onValue(presenceRef, snap => {
+  const data = snap.val() || {};
+  const now  = Date.now();
+  const active = Object.values(data).filter(v => now-(v.ts||0) < 90000);
+  document.getElementById("onlineCount").textContent = active.length;
+});
+
+/* ── Typing indicator ── */
+function setTyping(active) {
+  const myRef = ref(db, `typing/${sessionId}`);
+  if (active) set(myRef, { username, ts: Date.now() });
+  else remove(myRef);
+  isTyping = active;
+}
+
+onValue(typingRef, snap => {
+  const data = snap.val() || {};
+  const now  = Date.now();
+  const others = Object.values(data).filter(v =>
+    v.username !== username && now-(v.ts||0) < 5000
+  );
+  const el = document.getElementById("typingIndicator");
+  if (!others.length) { el.textContent = ""; return; }
+  const names = others.map(v=>v.username);
+  if (names.length === 1) el.textContent = `${names[0]} is typing...`;
+  else if (names.length === 2) el.textContent = `${names[0]} and ${names[1]} are typing...`;
+  else el.textContent = `${names.slice(0,-1).join(", ")} and ${names.at(-1)} are typing...`;
+});
+
+/* ── Messages ── */
+const messagesDiv = document.getElementById("messages");
+
+function addDateSep(dateStr) {
+  const sep = document.createElement("div");
+  sep.className = "date-sep";
+  sep.textContent = dateStr;
+  messagesDiv.appendChild(sep);
+}
+
+function addSystemMessage(text) {
+  const div = document.createElement("div");
+  div.className = "msg-system";
+  div.textContent = text;
+  messagesDiv.appendChild(div);
+  if (autoScroll) scrollToBottom();
+}
+
+function addMessage(data, key) {
+  const dateStr = formatDate(data.time);
+  if (dateStr !== lastDate) { addDateSep(dateStr); lastDate = dateStr; }
+
+  if (data.type === "system") { addSystemMessage(data.text); return; }
+
+  const isOwn   = data.username === username;
+  const color   = usernameColor(data.username || "anonymous");
+
+  const div = document.createElement("div");
+  div.className = "message" + (isOwn ? " own" : "");
+  if (key) { div.dataset.key = key; msgNodes[key] = div; }
+
+  /* reply quote */
+  let replyHTML = "";
+  if (data.replyTo) {
+    const preview = escapeHtml((data.replyTo.text||"").slice(0,80));
+    replyHTML = `<div class="reply-quote" data-target="${escapeHtml(data.replyTo.id||"")}">
+      <span class="reply-author" style="color:${usernameColor(data.replyTo.username||'')}">${escapeHtml(data.replyTo.username||"")}</span>: ${preview}
+    </div>`;
+  }
+
+  div.innerHTML = `
+    ${replyHTML}
+    <div class="message-header">
+      <span class="username" style="color:${color}">${escapeHtml(data.username||"anonymous")}</span>
+      <span class="time">${formatTime(data.time)}</span>
+    </div>
+    <div class="message-text">${linkify(data.text||"")}</div>
+    <button class="reply-btn" data-key="${escapeHtml(key||"")}">↩ reply</button>
+    <button class="delete-btn" data-key="${escapeHtml(key||"")}">delete</button>
+  `;
+
+  /* reply quote click → scroll & highlight */
+  const rq = div.querySelector(".reply-quote");
+  if (rq) {
+    rq.addEventListener("click", () => {
+      const tid = rq.dataset.target;
+      const target = msgNodes[tid];
+      if (target) {
+        target.scrollIntoView({ behavior:"smooth", block:"center" });
+        target.classList.add("highlight");
+        setTimeout(() => target.classList.remove("highlight"), 1500);
+      }
+    });
+  }
+
+  /* reply btn */
+  div.querySelector(".reply-btn").addEventListener("click", () => {
+    replyTo = { id: key, username: data.username, text: data.text };
+    document.getElementById("replyPreview").innerHTML =
+      `replying to <strong>${escapeHtml(data.username)}</strong>: ${escapeHtml((data.text||"").slice(0,60))}`;
+    document.getElementById("replyBar").classList.add("visible");
+    document.getElementById("messageInput").focus();
+  });
+
+  /* delete btn */
+  div.querySelector(".delete-btn").addEventListener("click", () => {
+    if (!adminMode) return;
+    if (confirm("delete this message?")) {
+      remove(ref(db, `messages/${key}`));
+    }
+  });
+
+  messagesDiv.appendChild(div);
+
+  if (autoScroll) scrollToBottom();
+  else if (initialized) document.getElementById("scrollBtn").classList.add("visible");
+}
+
+onChildAdded(messagesRef, snap => {
+  addMessage(snap.val(), snap.key);
+  if (!initialized) initialized = true;
+});
+
+onChildRemoved(messagesRef, snap => {
+  const node = msgNodes[snap.key];
+  if (node) { node.remove(); delete msgNodes[snap.key]; }
+});
+
+/* ── Scroll ── */
+messagesDiv.addEventListener("scroll", () => {
+  const threshold = 80;
+  const atBottom  = messagesDiv.scrollHeight - messagesDiv.scrollTop - messagesDiv.clientHeight < threshold;
+  autoScroll = atBottom;
+  if (atBottom) document.getElementById("scrollBtn").classList.remove("visible");
+});
+
+document.getElementById("scrollBtn").addEventListener("click", () => {
+  scrollToBottom(); autoScroll = true;
+  document.getElementById("scrollBtn").classList.remove("visible");
+});
+
+/* ── Reply cancel ── */
+document.getElementById("cancelReply").addEventListener("click", () => {
+  replyTo = null;
+  document.getElementById("replyBar").classList.remove("visible");
+});
+
+/* ── Send ── */
+function sendMessage() {
+  const input = document.getElementById("messageInput");
+  let text    = input.value.trim();
+  if (!text) return;
+
+  if (text.length > MAX_MSG_LEN) {
+    showToast(`max ${MAX_MSG_LEN} characters`);
+    return;
+  }
+
+  if (containsBannedWord(text)) {
+    showToast("message blocked — contains disallowed content");
+    return;
+  }
+
+  const now = Date.now();
+  const remaining = COOLDOWN_MS - (now - lastMsgTime);
+  if (remaining > 0) {
+    showToast(`wait ${Math.ceil(remaining/1000)}s`);
+    return;
+  }
+
+  if (text === lastMsgText && now - lastMsgTime < 30000) {
+    showToast("don't repeat the same message");
+    return;
+  }
+
+  lastMsgTime = now;
+  lastMsgText = text;
+
+  /* cooldown bar */
+  const bar = document.getElementById("cooldownBar");
+  bar.style.transition = "none"; bar.style.transform = "scaleX(0)";
+  requestAnimationFrame(() => {
+    bar.style.transition = `transform ${COOLDOWN_MS}ms linear`;
+    bar.style.transform  = "scaleX(1)";
+  });
+  setTimeout(() => bar.style.transform = "scaleX(0)", COOLDOWN_MS);
+
+  const payload = { username, text, time: Date.now() };
+  if (replyTo) {
+    payload.replyTo = { id: replyTo.id, username: replyTo.username, text: replyTo.text.slice(0,100) };
+    replyTo = null;
+    document.getElementById("replyBar").classList.remove("visible");
+  }
+
+  push(ref(db, "messages"), payload);
+  input.value = "";
+  document.getElementById("charCount").textContent = MAX_MSG_LEN;
+  document.getElementById("charCount").classList.remove("warn");
+
+  /* clear typing */
+  setTyping(false);
+  clearTimeout(typingTimer);
+}
+
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+document.getElementById("messageInput").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+/* char count + typing */
+document.getElementById("messageInput").addEventListener("input", e => {
+  const len  = e.target.value.length;
+  const rem  = MAX_MSG_LEN - len;
+  const cc   = document.getElementById("charCount");
+  cc.textContent = rem;
+  cc.classList.toggle("warn", rem < 40);
+
+  /* typing */
+  if (!isTyping && e.target.value.trim()) setTyping(true);
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => setTyping(false), 2000);
+  if (!e.target.value.trim()) setTyping(false);
+});
+
+/* ── Username ── */
+const overlay = document.getElementById("modalOverlay");
+
+function validateUsername(raw) {
+  const name = raw.trim().slice(0, MAX_USER_LEN);
+  if (!name)         return { error: "username can't be empty" };
+  if (name.length<2) return { error: "at least 2 characters" };
+  if (RESERVED.includes(name.toLowerCase())) return { error: "that name is reserved" };
+  if (containsBannedWord(name)) return { error: "that username isn't allowed — choose another" };
+  return { name };
+}
+
+function showModal() {
+  overlay.classList.add("open");
+  setTimeout(() => document.getElementById("usernameInput").focus(), 50);
+}
+function hideModal() { overlay.classList.remove("open"); }
+
+function applyUsername(name, isChange) {
+  prevUsername = username;
+  username = name;
+  localStorage.setItem("username", username);
+  document.getElementById("userChip").textContent = username;
+  hideModal();
+  document.getElementById("messageInput").focus();
+  if (!isChange) {
+    registerPresence();
+    push(ref(db, "messages"), { type:"system", text:`${username} joined the chat`, time: Date.now() });
+  } else if (prevUsername && prevUsername !== username) {
+    push(ref(db, "messages"), { type:"system", text:`${prevUsername} changed their name to ${username}`, time: Date.now() });
+    /* update presence */
+    set(ref(db, `presence/${sessionId}`), { username, ts: Date.now() });
+  }
+}
+
+document.getElementById("joinBtn").addEventListener("click", () => {
+  const raw    = document.getElementById("usernameInput").value;
+  const result = validateUsername(raw);
+  if (result.error) {
+    document.getElementById("modalError").textContent = result.error;
+    return;
+  }
+  const isChange = !!username;
+  applyUsername(result.name, isChange);
+});
+
+document.getElementById("usernameInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("joinBtn").click();
+});
+
+document.getElementById("userChip").addEventListener("click", () => {
+  document.getElementById("usernameInput").value = username;
+  document.getElementById("modalError").textContent = "";
+  showModal();
+});
+
+/* ── Admin mode ── */
+document.addEventListener("keydown", e => {
+  if (e.ctrlKey && e.shiftKey && e.key === "A") {
+    e.preventDefault();
+    if (adminMode) {
+      adminMode = false;
+      document.body.classList.remove("admin-mode");
+      document.getElementById("adminBadge").classList.remove("visible");
+      showToast("admin mode disabled");
+    } else {
+      const pass = prompt("admin password:");
+      if (pass === ADMIN_PASS) {
+        adminMode = true;
+        document.body.classList.add("admin-mode");
+        document.getElementById("adminBadge").classList.add("visible");
+        showToast("admin mode enabled");
+      } else if (pass !== null) {
+        showToast("wrong password");
+      }
+    }
+  }
+});
+
+/* ── Init ── */
+const stored = localStorage.getItem("username");
+if (stored) {
+  const result = validateUsername(stored);
+  if (!result.error) { applyUsername(result.name, false); }
+  else { localStorage.removeItem("username"); showModal(); }
+} else {
+  showModal();
+}
+</script>
+</body>
+</html>
