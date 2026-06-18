@@ -401,6 +401,150 @@
     z-index: 20; box-shadow: 0 4px 12px rgba(108,143,255,0.3);
   }
   #scrollBtn.visible { display: flex; }
+
+  /* ── Poll button ── */
+  #pollBtn {
+    width: 44px; height: 44px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+  #pollBtn:hover { background: var(--border); color: var(--text); border-color: var(--accent); }
+  #pollBtn svg { width: 18px; height: 18px; fill: currentColor; }
+
+  /* ── Poll creation modal ── */
+  .poll-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    width: 380px;
+    max-width: 90vw;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .poll-modal h2 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .poll-modal input {
+    width: 100%; padding: 10px 13px;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 14px; font-family: 'Inter', sans-serif; outline: none;
+  }
+  .poll-modal input:focus { border-color: var(--accent); }
+  .poll-option-row { display: flex; gap: 6px; align-items: center; }
+  .poll-option-row input { flex: 1; }
+  .remove-option-btn {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 16px; padding: 4px 6px; flex-shrink: 0;
+  }
+  .remove-option-btn:hover { color: var(--danger); }
+  #addOptionBtn {
+    background: none; border: 1px dashed var(--border);
+    color: var(--muted); border-radius: 8px; padding: 8px;
+    font-size: 12px; cursor: pointer; transition: border-color 0.15s, color 0.15s;
+  }
+  #addOptionBtn:hover { border-color: var(--accent); color: var(--accent); }
+  #addOptionBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .poll-modal-actions { display: flex; gap: 8px; margin-top: 6px; }
+  .poll-modal-actions button {
+    flex: 1; padding: 10px; border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s;
+  }
+  #createPollBtn { background: var(--accent); color: white; }
+  #createPollBtn:hover { background: #8aabff; }
+  #cancelPollBtn { background: var(--card); color: var(--muted); border: 1px solid var(--border); }
+  #cancelPollBtn:hover { background: var(--border); color: var(--text); }
+  .poll-modal-error { font-size: 12px; color: var(--danger); min-height: 14px; }
+
+  /* ── Poll card in chat feed ── */
+  .poll-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    animation: slideIn 0.15s ease-out;
+  }
+  .poll-question {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .poll-icon { width: 14px; height: 14px; fill: var(--accent); flex-shrink: 0; }
+  .poll-meta {
+    font-size: 11px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .poll-options { display: flex; flex-direction: column; gap: 6px; }
+  .poll-option {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.15s;
+    background: var(--surface);
+  }
+  .poll-option:hover { border-color: var(--accent); }
+  .poll-option.voted { border-color: var(--accent); cursor: default; }
+  .poll-option.disabled { cursor: default; }
+  .poll-fill {
+    position: absolute; inset: 0;
+    background: rgba(108,143,255,0.16);
+    width: 0%;
+    transition: width 0.3s ease-out;
+    z-index: 0;
+  }
+  .poll-option-content {
+    position: relative; z-index: 1;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px;
+  }
+  .poll-option-label { display: flex; align-items: center; gap: 6px; }
+  .poll-check { color: var(--accent); font-size: 12px; }
+  .poll-option-stats {
+    font-size: 12px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0; margin-left: 10px;
+  }
+
+  /* ── Geometry Dash easter egg ── */
+  #gdEasterEgg {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  #gdEasterEgg.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #gdEasterEgg img, #gdEasterEgg .gd-fallback {
+    max-width: 320px;
+    max-height: 320px;
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    border: 1px solid var(--border);
+    display: block;
+  }
+  .gd-fallback {
+    width: 260px; height: 180px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
 </style>
 </head>
 <body>
@@ -443,6 +587,11 @@
   </div>
   <div class="cooldown-bar" id="cooldownBar"></div>
   <div class="input-bar">
+    <button id="pollBtn" title="create a poll">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 13h4v8H3v-8zm7-9h4v17h-4V4zm7 5h4v12h-4V9z"/>
+      </svg>
+    </button>
     <input id="messageInput" placeholder="say something..." maxlength="300" autocomplete="off">
     <span id="charCount">300</span>
     <button id="sendBtn" title="send">
@@ -453,6 +602,31 @@
   </div>
 </div>
 
+<!-- Poll creation modal -->
+<div class="modal-overlay" id="pollModalOverlay">
+  <div class="poll-modal">
+    <h2>create a poll</h2>
+    <input id="pollQuestion" placeholder="ask a question..." maxlength="150" autocomplete="off">
+    <div id="pollOptionsList">
+      <div class="poll-option-row">
+        <input class="poll-option-input" placeholder="option 1" maxlength="80" autocomplete="off">
+      </div>
+      <div class="poll-option-row">
+        <input class="poll-option-input" placeholder="option 2" maxlength="80" autocomplete="off">
+      </div>
+    </div>
+    <button id="addOptionBtn">+ add option</button>
+    <div class="poll-modal-error" id="pollModalError"></div>
+    <div class="poll-modal-actions">
+      <button id="cancelPollBtn">cancel</button>
+      <button id="createPollBtn">create poll</button>
+    </div>
+  </div>
+</div>
+
+<!-- Geometry Dash easter egg -->
+<div id="gdEasterEgg"></div>
+
 <button id="scrollBtn">↓ new messages</button>
 <div id="toast"></div>
 
@@ -460,7 +634,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getDatabase, ref, push, remove, onChildAdded, onChildRemoved,
-  onValue, set, query, limitToLast, serverTimestamp
+  onValue, set, query, limitToLast, serverTimestamp, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 /* ── Firebase ── */
@@ -479,6 +653,7 @@ const db  = getDatabase(app);
 const messagesRef = query(ref(db, "messages"), limitToLast(100));
 const presenceRef = ref(db, "presence");
 const typingRef   = ref(db, "typing");
+const pollsRef    = ref(db, "polls");
 
 /* ── Constants ── */
 const COOLDOWN_MS   = 3000;
@@ -510,7 +685,7 @@ const BANNED_WORDS = [
   "kill yourself","kys","go die","shoot yourself","hang yourself","slit your wrists",
   "end your life","commit suicide","neck yourself",
   "meth","heroin","crackhead","junkie",
-  "subhuman","vermin","scumbag","lowlife","degenerate","incel","niga","puh","niger"
+  "subhuman","vermin","scumbag","lowlife","degenerate","incel"
 ];
 
 /* ── Username colour palette (dark-mode readable) ── */
@@ -549,6 +724,8 @@ let prevUsername  = "";
 let lastMsgTime   = 0;
 let lastMsgText   = "";
 let sessionId     = Math.random().toString(36).slice(2);
+let voterId       = localStorage.getItem("voterId") || (Math.random().toString(36).slice(2) + Date.now().toString(36));
+localStorage.setItem("voterId", voterId);
 let autoScroll    = true;
 let lastDate      = "";
 let initialized   = false;
@@ -557,6 +734,8 @@ let replyTo       = null;   // { id, username, text }
 let typingTimer   = null;
 let isTyping      = false;
 const msgNodes    = {};     // firebaseKey -> DOM node
+const pollNodes   = {};     // pollKey -> DOM node
+let gdTriggerTimes = [];    // timestamps of "geometry dash" sends, this client only
 
 /* ── Utils ── */
 function escapeHtml(t) {
@@ -735,6 +914,159 @@ onChildRemoved(messagesRef, snap => {
   if (node) { node.remove(); delete msgNodes[snap.key]; }
 });
 
+/* ── Polls ── */
+function pollVoteCounts(votes) {
+  const counts = {};
+  Object.values(votes || {}).forEach(optIdx => {
+    counts[optIdx] = (counts[optIdx] || 0) + 1;
+  });
+  return counts;
+}
+
+function renderPollCard(div, poll, key) {
+  const votes      = poll.votes || {};
+  const counts     = pollVoteCounts(votes);
+  const totalVotes = Object.keys(votes).length;
+  const myVoteIdx  = votes[voterId];
+  const hasVoted   = myVoteIdx !== undefined;
+
+  const optionsHTML = (poll.options || []).map((optText, idx) => {
+    const c = counts[idx] || 0;
+    const pct = totalVotes ? Math.round((c / totalVotes) * 100) : 0;
+    const isMine = hasVoted && Number(myVoteIdx) === idx;
+    return `
+      <div class="poll-option${hasVoted ? " disabled" : ""}${isMine ? " voted" : ""}" data-idx="${idx}">
+        <div class="poll-fill" style="width:${hasVoted ? pct : 0}%"></div>
+        <div class="poll-option-content">
+          <span class="poll-option-label">${isMine ? '<span class="poll-check">✓</span>' : ""}${escapeHtml(optText)}</span>
+          ${hasVoted ? `<span class="poll-option-stats">${c} · ${pct}%</span>` : ""}
+        </div>
+      </div>`;
+  }).join("");
+
+  div.innerHTML = `
+    <div class="poll-question">
+      <svg class="poll-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 13h4v8H3v-8zm7-9h4v17h-4V4zm7 5h4v12h-4V9z"/></svg>
+      ${escapeHtml(poll.question || "")}
+    </div>
+    <div class="poll-options">${optionsHTML}</div>
+    <div class="poll-meta">poll by ${escapeHtml(poll.username || "anonymous")} · ${totalVotes} vote${totalVotes===1?"":"s"}</div>
+  `;
+
+  if (!hasVoted) {
+    div.querySelectorAll(".poll-option").forEach(optEl => {
+      optEl.addEventListener("click", () => {
+        const idx = Number(optEl.dataset.idx);
+        runTransaction(ref(db, `polls/${key}/votes/${voterId}`), curr => {
+          if (curr !== null) return; // already voted, abort
+          return idx;
+        });
+      });
+    });
+  }
+}
+
+function addPoll(poll, key) {
+  const dateStr = formatDate(poll.time);
+  if (dateStr !== lastDate) { addDateSep(dateStr); lastDate = dateStr; }
+
+  const div = document.createElement("div");
+  div.className = "poll-card";
+  div.dataset.key = key;
+  pollNodes[key] = div;
+  renderPollCard(div, poll, key);
+  messagesDiv.appendChild(div);
+
+  if (autoScroll) scrollToBottom();
+  else if (initialized) document.getElementById("scrollBtn").classList.add("visible");
+}
+
+onChildAdded(pollsRef, snap => {
+  addPoll(snap.val(), snap.key);
+});
+
+onValue(pollsRef, snap => {
+  const data = snap.val() || {};
+  Object.entries(data).forEach(([key, poll]) => {
+    const node = pollNodes[key];
+    if (node) renderPollCard(node, poll, key); // live vote updates
+  });
+});
+
+onChildRemoved(pollsRef, snap => {
+  const node = pollNodes[snap.key];
+  if (node) { node.remove(); delete pollNodes[snap.key]; }
+});
+
+/* ── Poll creation modal ── */
+const pollModalOverlay = document.getElementById("pollModalOverlay");
+const MAX_POLL_OPTIONS = 4;
+
+function showPollModal() {
+  document.getElementById("pollQuestion").value = "";
+  document.getElementById("pollModalError").textContent = "";
+  document.querySelectorAll(".poll-option-input").forEach((el, i) => {
+    el.value = "";
+  });
+  // reset to 2 options
+  const list = document.getElementById("pollOptionsList");
+  while (list.children.length > 2) list.removeChild(list.lastChild);
+  document.getElementById("addOptionBtn").disabled = false;
+  pollModalOverlay.classList.add("open");
+  setTimeout(() => document.getElementById("pollQuestion").focus(), 50);
+}
+
+function hidePollModal() {
+  pollModalOverlay.classList.remove("open");
+}
+
+document.getElementById("pollBtn").addEventListener("click", showPollModal);
+document.getElementById("cancelPollBtn").addEventListener("click", hidePollModal);
+
+document.getElementById("addOptionBtn").addEventListener("click", () => {
+  const list = document.getElementById("pollOptionsList");
+  const count = list.children.length;
+  if (count >= MAX_POLL_OPTIONS) return;
+  const row = document.createElement("div");
+  row.className = "poll-option-row";
+  row.innerHTML = `
+    <input class="poll-option-input" placeholder="option ${count + 1}" maxlength="80" autocomplete="off">
+    <button class="remove-option-btn" title="remove">✕</button>
+  `;
+  row.querySelector(".remove-option-btn").addEventListener("click", () => {
+    row.remove();
+    document.getElementById("addOptionBtn").disabled = false;
+  });
+  list.appendChild(row);
+  if (list.children.length >= MAX_POLL_OPTIONS) {
+    document.getElementById("addOptionBtn").disabled = true;
+  }
+  row.querySelector("input").focus();
+});
+
+document.getElementById("createPollBtn").addEventListener("click", () => {
+  const question = document.getElementById("pollQuestion").value.trim();
+  const optionInputs = Array.from(document.querySelectorAll(".poll-option-input"));
+  const options = optionInputs.map(el => el.value.trim()).filter(Boolean);
+  const errEl = document.getElementById("pollModalError");
+
+  if (!question) { errEl.textContent = "enter a question"; return; }
+  if (containsBannedWord(question)) { errEl.textContent = "question contains disallowed content"; return; }
+  if (options.length < 2) { errEl.textContent = "add at least 2 options"; return; }
+  if (options.length > MAX_POLL_OPTIONS) { errEl.textContent = `max ${MAX_POLL_OPTIONS} options`; return; }
+  if (options.some(o => containsBannedWord(o))) { errEl.textContent = "an option contains disallowed content"; return; }
+
+  push(pollsRef, {
+    question,
+    options,
+    username,
+    time: Date.now(),
+    votes: {}
+  });
+
+  hidePollModal();
+});
+
 /* ── Scroll ── */
 messagesDiv.addEventListener("scroll", () => {
   const threshold = 80;
@@ -763,6 +1095,24 @@ function sendMessage() {
   if (text.length > MAX_MSG_LEN) {
     showToast(`max ${MAX_MSG_LEN} characters`);
     return;
+  }
+
+  /* ── Geometry Dash easter egg check ── */
+  if (text.toLowerCase() === "geometry dash") {
+    const now = Date.now();
+    gdTriggerTimes.push(now);
+    gdTriggerTimes = gdTriggerTimes.filter(t => now - t < 60000);
+
+    if (gdTriggerTimes.length >= 3) {
+      gdTriggerTimes = []; // reset after trigger
+      showGdEasterEgg();
+      input.value = "";
+      document.getElementById("charCount").textContent = MAX_MSG_LEN;
+      document.getElementById("charCount").classList.remove("warn");
+      setTyping(false);
+      clearTimeout(typingTimer);
+      return; // no chat message generated
+    }
   }
 
   if (containsBannedWord(text)) {
@@ -810,6 +1160,28 @@ function sendMessage() {
   setTyping(false);
   clearTimeout(typingTimer);
 }
+
+/* ── Geometry Dash easter egg popup ── */
+let gdHideTimer = null;
+function showGdEasterEgg() {
+  const el = document.getElementById("gdEasterEgg");
+  clearTimeout(gdHideTimer);
+
+  el.innerHTML = `<img src="gd-reference.gif" alt="geometry dash"
+    onerror="this.outerHTML='<div class=&quot;gd-fallback&quot;>geometry dash<br>(add gd-reference.gif next to index.html)</div>'">`;
+
+  el.classList.add("show");
+
+  const close = () => { el.classList.remove("show"); el.removeEventListener("click", close); };
+  el.addEventListener("click", close);
+
+  // ~2.5s total: fade in (0.4s, via CSS transition) -> hold -> fade out (0.4s)
+  gdHideTimer = setTimeout(() => {
+    el.classList.remove("show");
+  }, 2100);
+}
+
+
 
 document.getElementById("sendBtn").addEventListener("click", sendMessage);
 document.getElementById("messageInput").addEventListener("keydown", e => {
